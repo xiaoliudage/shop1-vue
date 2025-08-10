@@ -57,6 +57,11 @@
             :xs="24" :sm="12" :md="8" :lg="6"
           >
             <el-card class="item-card">
+              <!-- 添加状态标签 -->
+              <div class="status-badge" :class="getStatusClass(item.status)">
+                {{ getStatusText(item.status) }}
+              </div>
+              
               <img 
                 :src="item.image" 
                 class="item-image"
@@ -199,6 +204,26 @@ const viewDetail = (item) => {
 
 // 初始加载
 onMounted(fetchItems)
+
+// 添加状态文本映射
+const getStatusText = (status) => {
+  const statusMap = {
+    1: '可交换',
+    2: '交易中',
+    3: '已交换'
+  }
+  return statusMap[status] || '未知状态'
+}
+
+// 添加状态样式映射
+const getStatusClass = (status) => {
+  const classMap = {
+    1: 'status-available',
+    2: 'status-trading',
+    3: 'status-exchanged'
+  }
+  return `status-badge ${classMap[status] || 'status-unknown'}`
+}
 </script>
 
 <style scoped>
@@ -326,5 +351,40 @@ onMounted(fetchItems)
   .item-card {
     margin-bottom: 15px;
   }
+}
+
+/* 添加状态标签样式 */
+.status-badge {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+  color: white;
+  z-index: 1;
+}
+
+.status-available {
+  background-color: #4CAF50; /* 绿色-可交换 */
+}
+
+.status-trading {
+  background-color: #FF9800; /* 橙色-交易中 */
+}
+
+.status-exchanged {
+  background-color: #F44336; /* 红色-已交换 */
+}
+
+.status-unknown {
+  background-color: #9E9E9E; /* 灰色-未知状态 */
+}
+
+/* 调整卡片样式以适应状态标签 */
+.item-card {
+  position: relative;
+  overflow: hidden;
 }
 </style>
