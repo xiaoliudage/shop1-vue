@@ -4,7 +4,7 @@ import axios from 'axios';
 
 // 分页相关变量
 const currentPage = ref(1);
-const pageSize = ref(10);
+const pageSize = ref(10); // 默认每页10条
 const total = ref(0);
 const items = ref([]);
 
@@ -19,20 +19,20 @@ const fetchItems = async () => {
       const response = await axios.get('/shop/getAll', {
         params: {
           page: currentPage.value,
-          pageSize: 2  // 与后端size参数匹配
+          pageSize: pageSize.value // 使用响应式的pageSize
         }
-        // 移除不再需要的JSON修复逻辑
       });
       console.log('API响应数据:', response.data);
       const result = response.data;
-      // 直接使用后端数据，添加缺失的image字段
-      items.value = (result.items || []).map(item => ({
+      // 从分页对象中获取实际数据数组（IPage.records）
+      const itemsArray = Array.isArray(result.items?.records) ? result.items.records : [];
+      items.value = itemsArray.map(item => ({
         ...item,
-        id: item.itemId,  // 确保id字段正确映射
-        // 使用默认图片处理缺失的image字段
-        image: `https://picsum.photos/200/200?random=${item.itemId}`
+        id: item.itemId,
+        image: item.imageUrl || `https://picsum.photos/200/200?random=${item.itemId}`
       }))
-      total.value = result.total || 0;
+      // 使用分页对象中的total属性
+      total.value = result.items?.total || 0;
       console.log('处理后的数据 - 物品列表:', items.value, '总数量:', total.value);
     } catch (error) {
       console.error('获取物品数据失败:', error);
@@ -48,7 +48,7 @@ onMounted(fetchItems);
 </script>
 
 <template>
-  <div class="app">
+  <div class="app-container">
     <!-- 导航栏 -->
     <el-menu :default-active="2" mode="horizontal" background-color="#f8f9fa" text-color="#333" active-text-color="#409EFF">
       <el-menu-item index="1">
@@ -87,6 +87,7 @@ onMounted(fetchItems);
 
     <!-- 物品列表区 -->
     <div class="items-container" style="padding: 20px;">
+      
       <el-row gutter="20">
         <el-col :span="6" v-for="item in items" :key="item.id">
           <el-card :body-style="{ padding: '0px' }">
@@ -124,20 +125,81 @@ onMounted(fetchItems);
       </el-row>
 
       <!-- 分页控件 -->
-      <div style="text-align: center; margin-top: 30px;">
-        <el-pagination 
-          background 
-          layout="prev, pager, next" 
+      <div class="pagination-container">
+        <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :page-sizes="[5, 10, 20, 50]"
           :total="total"
-          :current-page="currentPage"
-          :page-size="pageSize"
-          @current-change="(page) => { currentPage.value = page; fetchItems(); }">
-        </el-pagination>
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
       </div>
     </div>
   </div>
 </template>
 
+<script>
+// 分页相关响应式变量
+const currentPage = ref(1);
+const pageSize = ref(10); // 默认每页10条
+const total = ref(0);
+
+// 分页事件处理函数
+const handleSizeChange = (newSize) => {
+  pageSize.value = newSize;
+  currentPage.value = 1; // 切换每页条数时重置到第一页
+  fetchItems();
+};
+
+const handleCurrentChange = (newPage) => {
+  currentPage.value = newPage;
+  fetchItems();
+};
+
+const fetchItems = async () => {
+  try {
+      console.log('正在请求数据 - 页码:', currentPage.value, '每页数量:', pageSize.value);
+      const response = await axios.get('/shop/getAll', {
+        params: {
+          page: currentPage.value,
+          pageSize: pageSize.value // 使用响应式的pageSize
+        }
+      });
+      console.log('API响应数据:', response.data);
+      const result = response.data;
+      // 从分页对象中获取实际数据数组（IPage.records）
+      const itemsArray = Array.isArray(result.items?.records) ? result.items.records : [];
+      items.value = itemsArray.map(item => ({
+        ...item,
+        id: item.itemId,
+        image: item.imageUrl || `https://picsum.photos/200/200?random=${item.itemId}`
+      }))
+      // 使用分页对象中的total属性
+      total.value = result.items?.total || 0;
+      console.log('处理后的数据 - 物品列表:', items.value, '总数量:', total.value);
+    } catch (error) {
+      console.error('获取物品数据失败:', error);
+      console.error('错误详情:', error.response?.data || error.message);
+      // 显示错误提示
+      items.value = [];
+      total.value = 0;
+    }
+};
+</script>
+
 <style scoped>
 /* 可以添加自定义样式 */
+.pagination-container {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.items-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
 </style>
