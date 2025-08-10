@@ -17,7 +17,7 @@
       <el-menu-item index="4">消息中心</el-menu-item>
       
       <el-menu-item index="5" style="margin-left: auto;">
-        <el-button type="primary" icon="Plus">发布物品</el-button>
+        <el-button type="primary" icon="Plus" @click="goToAddItem">发布物品</el-button>
       </el-menu-item>
       <el-menu-item index="6">
         <el-avatar icon="User" size="small"></el-avatar>
@@ -236,6 +236,9 @@ const handleViewDetails = async (itemId) => {
 onMounted(() => {
   fetchItems()
 })
+const goToAddItem = () => {
+  router.push({ name: 'AddItem' })
+}
 </script>
 
 <style scoped>
